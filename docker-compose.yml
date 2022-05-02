@@ -1,0 +1,54 @@
+version: "2"
+
+services:
+  database:
+    image: postgres:14.2
+#    hostname: database
+    container_name: database
+    volumes:
+      - /opt/database:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=django
+      - POSTGRES_PASSWORD=django
+      - POSTGRES_DB=django
+    networks: 
+      - djan       
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./lib_catalog/
+      dockerfile: Dockerfile
+#    hostname: back
+    container_name: backend
+    networks:
+      - djan
+      - djan1
+    ports:
+      - "8000:8000"
+#    links:
+#      - database
+    depends_on:
+      - database
+    command: /bin/bash -c "python manage.py migrate && python manage.py loaddata catalog/fixtures/bbk_data.json && python manage.py runserver 0.0.0.0:8000"
+
+  
+  frontend:
+    build:
+      context: ./frontend/
+      dockerfile: Dockerfile.prod1
+#    hostname: back
+    container_name: frontend
+    networks:
+      - djan1
+    ports:
+      - "3000:3000"
+#    depends_on:
+#      - backend
+  
+networks:
+  djan:
+    driver: bridge
+  djan1:
+    driver: bridge
